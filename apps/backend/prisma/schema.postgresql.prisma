@@ -1,0 +1,146 @@
+// Production PostgreSQL Schema (use with docker-compose.yml PostgreSQL 16 service)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model BrandKit {
+  id             String    @id @default(cuid())
+  name           String
+  primaryColor   String    @default("#6366F1")
+  secondaryColor String    @default("#EC4899")
+  accentColor    String    @default("#10B981")
+  darkBgColor    String    @default("#0B0F19")
+  fontFamilyVi   String    @default("Be Vietnam Pro, Plus Jakarta Sans, sans-serif")
+  fontFamilyKo   String    @default("Pretendard, Noto Sans KR, sans-serif")
+  fontFamilyEn   String    @default("Space Grotesk, Inter, sans-serif")
+  watermarkText  String    @default("OMNIREEL STUDIO")
+  safeZonePreset String    @default("TIKTOK_REELS_9_16")
+  projects       Project[]
+  createdAt      DateTime  @default(now())
+}
+
+model Project {
+  id                  String         @id @default(cuid())
+  title               String
+  campaignGoal        String
+  language            String         @default("vi")
+  aspectRatio         String         @default("9:16")
+  status              String         @default("READY")
+  llmModel            String         @default("claude-3-7-sonnet")
+  imageModel          String         @default("gemini-2.5-flash-image")
+  videoModel          String         @default("kling-v2.0")
+  voiceModel          String         @default("elevenlabs-multilingual-v2")
+  bgmTrack            String         @default("cyberpunk-synth-upbeat")
+  bgmDuckingDb        Float          @default(-14.0)
+  estimatedCostUsd    Float          @default(0.18)
+  aiCallsCount        Int            @default(4)
+  visualQaScore       Float          @default(94.5)
+  promptVersionTag    String         @default("v2.4-prod")
+  renderedVideoUrl    String?
+  brandKitId          String
+  brandKit            BrandKit       @relation(fields: [brandKitId], references: [id])
+  scenes              Scene[]
+  suggestions         AiSuggestion[]
+  renderJobs          RenderJob[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+model Scene {
+  id                 String   @id @default(cuid())
+  projectId          String
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  orderIndex         Int
+  durationSec        Float    @default(3.5)
+  headlineText       String
+  subheadText        String
+  badgeText          String   @default("AI STUDIO")
+  voiceoverScript    String
+  subtitleTimingJson String   @db.Text
+  typographyPreset   String   @default("DYNAMIC_HERO_CENTER")
+  transitionType     String   @default("zoompan")
+  imagePrompt        String   @db.Text
+  videoPrompt        String   @db.Text
+  videoModelUsed     String   @default("kling-v2.0")
+  bgColorPrimary     String   @default("#0F172A")
+  bgColorSecondary   String   @default("#1E1B4B")
+  accentColor        String   @default("#38BDF8")
+  svgMarkup          String   @db.Text
+  lineBreakMetaJson  String   @db.Text
+  visualQaScore      Float    @default(95.0)
+  createdAt          DateTime @default(now())
+}
+
+model AiSuggestion {
+  id                 String   @id @default(cuid())
+  projectId          String
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sceneId            String?
+  category           String
+  title              String
+  rationale          String   @db.Text
+  impactMetric       String
+  confidenceScore    Float    @default(0.92)
+  estimatedCostDelta Float    @default(0.0)
+  previewPayloadJson String   @db.Text
+  isApplied          Boolean  @default(false)
+  createdAt          DateTime @default(now())
+}
+
+model PromptExperiment {
+  id                    String   @id @default(cuid())
+  name                  String
+  targetModel           String
+  versionTag            String
+  baselineVersionTag    String
+  syntaxStyle           String
+  promptTemplate        String   @db.Text
+  structuredSchemaJson  String   @db.Text
+  sampleSize            Int      @default(50)
+  typographyScore       Float
+  brandConsistencyScore Float
+  subtitleSyncScore     Float
+  avgLatencyMs          Int
+  avgCostUsd            Float
+  status                String
+  regressionNotes       String   @db.Text
+  createdAt             DateTime @default(now())
+}
+
+model RenderJob {
+  id                  String   @id @default(cuid())
+  projectId           String
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status              String
+  currentStage        String
+  progressPercent     Int      @default(0)
+  primaryVideoModel   String   @default("kling-v2.0")
+  activeVideoModel    String   @default("kling-v2.0")
+  fallbackTriggered   Boolean  @default(false)
+  retryCount          Int      @default(0)
+  failureReason       String?
+  recoveryActionTaken String?
+  logsJson            String   @db.Text
+  outputUrl           String?
+  durationMs          Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model OperationalAlert {
+  id                 String    @id @default(cuid())
+  severity           String
+  component          String
+  errorCode          String
+  message            String    @db.Text
+  autoMitigationRule String    @db.Text
+  resolved           Boolean   @default(false)
+  resolvedAt         DateTime?
+  createdAt          DateTime  @default(now())
+}
+

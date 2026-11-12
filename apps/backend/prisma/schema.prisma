@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model BrandKit {
+  id             String    @id @default(cuid())
+  name           String
+  primaryColor   String    @default("#6366F1")
+  secondaryColor String    @default("#EC4899")
+  accentColor    String    @default("#10B981")
+  darkBgColor    String    @default("#0B0F19")
+  fontFamilyVi   String    @default("Be Vietnam Pro, Plus Jakarta Sans, sans-serif")
+  fontFamilyKo   String    @default("Pretendard, Noto Sans KR, sans-serif")
+  fontFamilyEn   String    @default("Space Grotesk, Inter, sans-serif")
+  watermarkText  String    @default("OMNIREEL STUDIO")
+  safeZonePreset String    @default("TIKTOK_REELS_9_16")
+  projects       Project[]
+  createdAt      DateTime  @default(now())
+}
+
+model Project {
+  id                  String         @id @default(cuid())
+  title               String
+  campaignGoal        String
+  language            String         @default("vi") // "vi" | "ko" | "en"
+  aspectRatio         String         @default("9:16")
+  status              String         @default("READY") // "DRAFT" | "RENDERING" | "READY" | "QA_APPROVED"
+  llmModel            String         @default("claude-3-7-sonnet")
+  imageModel          String         @default("gemini-2.5-flash-image")
+  videoModel          String         @default("kling-v2.0")
+  voiceModel          String         @default("elevenlabs-multilingual-v2")
+  bgmTrack            String         @default("cyberpunk-synth-upbeat")
+  bgmDuckingDb        Float          @default(-14.0)
+  estimatedCostUsd    Float          @default(0.18)
+  aiCallsCount        Int            @default(4)
+  visualQaScore       Float          @default(94.5)
+  promptVersionTag    String         @default("v2.4-prod")
+  renderedVideoUrl    String?
+  brandKitId          String
+  brandKit            BrandKit       @relation(fields: [brandKitId], references: [id])
+  scenes              Scene[]
+  suggestions         AiSuggestion[]
+  renderJobs          RenderJob[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+model Scene {
+  id                 String   @id @default(cuid())
+  projectId          String
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  orderIndex         Int
+  durationSec        Float    @default(3.5)
+  headlineText       String
+  subheadText        String
+  badgeText          String   @default("AI STUDIO")
+  voiceoverScript    String
+  subtitleTimingJson String   // JSON array of { text, startSec, endSec, highlightWord }
+  typographyPreset   String   @default("DYNAMIC_HERO_CENTER") // "DYNAMIC_HERO_CENTER" | "EDITORIAL_SPLIT" | "KINETIC_BOTTOM_SAFE"
+  transitionType     String   @default("zoompan") // "fade" | "wipeleft" | "zoompan" | "circleopen"
+  imagePrompt        String
+  videoPrompt        String
+  videoModelUsed     String   @default("kling-v2.0")
+  bgColorPrimary     String   @default("#0F172A")
+  bgColorSecondary   String   @default("#1E1B4B")
+  accentColor        String   @default("#38BDF8")
+  svgMarkup          String   // Server-rendered SVG string with language-aware line breaking
+  lineBreakMetaJson  String   // Diagnostic metadata about VI/KO/EN line breaks & safe-zone bounds
+  visualQaScore      Float    @default(95.0)
+  createdAt          DateTime @default(now())
+}
+
+model AiSuggestion {
+  id                 String   @id @default(cuid())
+  projectId          String
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sceneId            String?
+  category           String   // "CONCEPT" | "TYPOGRAPHY_LAYOUT" | "MOTION_TRANSITION" | "VOICE_SUBTITLE" | "LANGUAGE_ADAPTATION"
+  title              String
+  rationale          String   // Grounded explanation why AI suggests this ("Đề xuất có cơ sở")
+  impactMetric       String   // e.g. "+28% Hook Retention" or "Zero Diacritic Clipping"
+  confidenceScore    Float    @default(0.92)
+  estimatedCostDelta Float    @default(0.0)
+  previewPayloadJson String   // JSON payload applied on 1-click decision
+  isApplied          Boolean  @default(false)
+  createdAt          DateTime @default(now())
+}
+
+model PromptExperiment {
+  id                    String   @id @default(cuid())
+  name                  String
+  targetModel           String   // "claude-3-7-sonnet" | "gpt-4o" | "gemini-2.5-pro" | "kling-v2.0"
+  versionTag            String
+  baselineVersionTag    String
+  syntaxStyle           String   // "CLAUDE_XML" | "GPT_JSON_SCHEMA" | "GEMINI_GROUNDED" | "VIDEO_MOTION_DSL"
+  promptTemplate        String
+  structuredSchemaJson  String
+  sampleSize            Int      @default(50)
+  typographyScore       Float
+  brandConsistencyScore Float
+  subtitleSyncScore     Float
+  avgLatencyMs          Int
+  avgCostUsd            Float
+  status                String   // "ACTIVE" | "CANDIDATE" | "ROLLED_BACK"
+  regressionNotes       String
+  createdAt             DateTime @default(now())
+}
+
+model RenderJob {
+  id                  String   @id @default(cuid())
+  projectId           String
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status              String   // "QUEUED" | "PROCESSING" | "RECOVERED" | "COMPLETED" | "FAILED"
+  currentStage        String   // "IDEATION" | "GEMINI_IMAGE_GEN" | "SVG_TYPESETTING" | "VIDEO_GATEWAY" | "ELEVENLABS_TTS" | "FFMPEG_MUX" | "VISUAL_QA"
+  progressPercent     Int      @default(0)
+  primaryVideoModel   String   @default("kling-v2.0")
+  activeVideoModel    String   @default("kling-v2.0")
+  fallbackTriggered   Boolean  @default(false)
+  retryCount          Int      @default(0)
+  failureReason       String?
+  recoveryActionTaken String?
+  logsJson            String   // JSON array of step logs with timestamps
+  outputUrl           String?
+  durationMs          Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model OperationalAlert {
+  id                 String   @id @default(cuid())
+  severity           String   // "CRITICAL" | "WARNING" | "INFO"
+  component          String   // "AI_VIDEO_GATEWAY" | "SVG_TYPESETTER" | "FFMPEG_WORKER" | "PROMPT_REGRESSION"
+  errorCode          String
+  message            String
+  autoMitigationRule String
+  resolved           Boolean  @default(false)
+  resolvedAt         DateTime?
+  createdAt          DateTime @default(now())
+}
+

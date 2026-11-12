@@ -1,0 +1,25 @@
+{
+  "name": "@omnireel/mobile-rn",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bare React Native CLI (No Expo) client for OmniReel AI Video Studio with Web/Mobile design token & GraphQL parity",
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "start": "react-native start"
+  },
+  "dependencies": {
+    "@apollo/client": "^3.12.6",
+    "graphql": "^16.10.0",
+    "react": "19.0.0",
+    "react-native": "0.78.0",
+    "react-native-svg": "^15.11.1",
+    "react-native-video": "^6.10.2"
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "^15.1.3",
+    "@types/react": "^19.0.7",
+    "typescript": "^5.7.3"
+  }
+}
+

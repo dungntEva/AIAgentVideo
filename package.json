@@ -1,0 +1,23 @@
+{
+  "name": "omnireel-ai-video-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI Generative Video Studio & Multi-Language SVG/FFmpeg Pipeline (Next.js App Router, NestJS, GraphQL, Prisma, React Native CLI)",
+  "workspaces": [
+    "apps/backend",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n BACKEND,WEB -c cyan,magenta \"npm run dev --workspace=apps/backend\" \"npm run dev --workspace=apps/web\"",
+    "dev:backend": "npm run dev --workspace=apps/backend",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/backend && npm run build --workspace=apps/web",
+    "db:push": "npm run db:push --workspace=apps/backend",
+    "db:seed": "npm run db:seed --workspace=apps/backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  }
+}
+
